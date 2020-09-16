@@ -1,6 +1,9 @@
 <<<<<<< HEAD
-ReadMetissue2cells.
-This notebook uses output files from tissue analyzer.
+ReadMe
+This repository contains methods used for discribing spatial distribution of myosin within a cell in 2D epithelial tissue. (Bhide et al; manuscript in preparation) 
+tissue2cells.
+
+This notebook uses output files from tissue analyzer.
 
 =======
 
