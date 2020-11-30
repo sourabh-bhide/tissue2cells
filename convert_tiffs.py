@@ -70,4 +70,5 @@ if __name__ == '__main__':
     with h5py.File(out_h5, 'w') as f:
         _ = f.create_dataset('membranes', data=raw_data[:, 0], compression='gzip')
         _ = f.create_dataset('myosin', data=raw_data[:, 1], compression='gzip')
+        _ = f.create_dataset('segmentation_unmapped', data=segm_timepoints, compression='gzip')
         _ = f.create_dataset('segmentation', data=remapped_segmentation, compression='gzip')
