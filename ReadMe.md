@@ -9,7 +9,7 @@ These scripts/notebooks use output files from tissue analyzer.
 
 Requirements:
 * Membrane segmentation results
-* If tracking information is available then need the local cell id information 	represented in the segmentation result
+* If tracking information is available then need the `track_id_cells` and `local_id_cells` information 	represented in the segmentation result
 
 =======
 
