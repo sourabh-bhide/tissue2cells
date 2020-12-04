@@ -2,6 +2,7 @@
 
 This repository contains methods used for discribing spatial distribution of myosin within and outside a cell in 2D epithelial tissue. [[Bhide et al.](https://doi.org/10.1101/2020.10.15.333963)]
 
+![analysis_illustration](https://github.com/sourabh-bhide/tissue2cells/blob/master/Data/analysis_illustration.png)
 
 These scripts/notebooks use output files from tissue analyzer.
 
