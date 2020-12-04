@@ -21,7 +21,7 @@ Things to keep in mind and change in the tissue2cells.py file :
 =======
 
 For row-by-row analysis:
-* Need cell ids belonging to every cell group/ cell row as a list. Enter it in 	the notebook 
+* Need cell ids belonging to every cell group/ cell row as a list. Enter it in 	the notebook tissues2Cells.ipynb
 
 
 =======
