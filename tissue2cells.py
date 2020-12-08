@@ -17,6 +17,7 @@ from scipy.signal import find_peaks
 import skimage.feature
 from scipy import misc, ndimage, spatial
 from skimage import feature
+from skimage.filters import threshold_otsu
 import imageio
 from skimage import io
 from PIL import Image as pilimage
@@ -46,12 +47,14 @@ def skewness_cells(image,mask):
     y_coord = np.asarray(indices[0])
     return skew(y_coord)
 
-def DV_Assymetry(box,myo_binary_cell):
+def DV_Assymetry(box,roi):
     a,b = ndimage.measurements.center_of_mass(box)
     D=0
     V=0
     DV_ass=0
-    for x,y in np.column_stack(np.where(myo_binary_cell > 254)):
+    thresh = skimage.filters.threshold_otsu(roi)
+    binary = roi > thresh*0.1
+    for x,y in np.column_stack(np.where(binary)):#(myo_binary_cell > 254)
         if y < int(a) :V = V+1
         else: D = D+1
 
@@ -61,29 +64,28 @@ def DV_Assymetry(box,myo_binary_cell):
     return DV_ass
            
     
-def measure_cell_properties(mask,myosin,number_of_cells,myo_seg):
+def measure_cell_properties(mask,myosin,number_of_cells,t):
     centroid = []
     offset = []
     area_cells =[]
     sum_myosin_cells = []
-    area_myo_seg_cells =[]
-    background_area_cells= []
     concerntration=[]
     skewness_cell = []
     DV_asymmetry= []
     eccentricity = []
     
-    for i in range (1,number_of_cells+1):
-        cell =np.array(mask)[:,:,2] == i
-        labels, number_of_objects = ndimage.label(cell)
-        myo2_seg_cell = (labels==1)*myo_seg # this step isolates myosinII signal for individual cells
-        myo2_cell = (labels==1)*myosin # this step isolates myosinII signal for individual cells
+    for i in range (number_of_cells):
+        
+        cell_mask = mask == i
+        myo_cell = myosin * cell_mask
+        labels, number_of_objects = ndimage.label(cell_mask)
         
         slice_x, slice_y = ndimage.find_objects(labels==1)[0]
-        box = cell[slice_x, slice_y]
-        roi = myo2_cell[slice_x, slice_y]
+        box = cell_mask[slice_x, slice_y]
+        roi = myo_cell[slice_x, slice_y]
         
         props = skimage.measure.regionprops(box.astype(int),roi)
+        
         weighted_cent = props[0].weighted_local_centroid
         weighted_cent = np.nan_to_num(weighted_cent)
         cent = props[0].centroid
@@ -97,21 +99,12 @@ def measure_cell_properties(mask,myosin,number_of_cells,myo_seg):
         off_center = np.nan_to_num(off_center)
         
         #area = ndimage.measurements.sum(cell,labels==1)
-        sum_myosin = ndimage.measurements.sum(myo2_cell)
+        sum_myosin = ndimage.measurements.sum(myo_cell)
         conc = sum_myosin/area
-        area_myo_seg_blob = ndimage.measurements.sum(myo2_seg_cell)/255
-        
-        
-        slice_x, slice_y = ndimage.find_objects(labels==1)[0]
-        box = cell[slice_x, slice_y]
-        a,b = ndimage.measurements.center_of_mass(box)
-        myo_binary_cell = myo2_seg_cell[slice_x, slice_y]
-       
-        
-        DV_assy = DV_Assymetry(box,myo_binary_cell)
+
+        DV_assy = DV_Assymetry(box,roi)
         DV_asymmetry= np.append(DV_asymmetry,DV_assy)
-        
-        roi = myo2_cell[slice_x, slice_y]
+      
         
         skewness = skewness_cells(roi,box)
         skewness_cell=np.append(skewness_cell,skewness)
@@ -120,7 +113,6 @@ def measure_cell_properties(mask,myosin,number_of_cells,myo_seg):
         centroid = np.append(centroid,cent,axis=0)
         offset = np.append(offset,off_center)
         sum_myosin_cells = np.append(sum_myosin_cells,sum_myosin)
-        area_myo_seg_cells = np.append(area_myo_seg_cells,area_myo_seg_blob)
         concerntration = np.append(concerntration,conc)
         eccentricity = np.append(eccentricity,ecc)
     
@@ -153,17 +145,14 @@ def measure_props(start,stop,master_data):
     measured_data = pd.DataFrame()
     df = pd.DataFrame()
     for t in range (start,stop):
-        cell_identity = f'SUM_9_25_merged_img5out_T{t}/cell_identity.tif'#SUM_9_25_merged_img5out_T0
-        myosin = f'Img5_SUM_9_25_16bit_T{t:02d}.tif' # Img5_SUM_9_25_16bit_T25
-        myo_threshold = f'Img5_SUM_9_25_32bit_40pc_Huang_T{t:02d}.tif' # Img5_SUM_9_25_32bit_40pc_Huang_T29.tif
+        cell_identity = f['segmentation'][:] # check the correct dataset name in the hdf5 file
+        myosin = f['myosin'][:] #
+        
         a = os.path.join(basepath, cell_identity)
         b = os.path.join(basepath, myosin)
-        c = os.path.join(basepath, myo_threshold)
-        
+                
         mask = np.array(Image.open(str(a)))
         myosin = np.array(Image.open(str(b)))
-        if os.path.isfile(c): myo_seg = np.array(Image.open(str(c)))
-        else :myo_seg = np.array(Image.open(str(a)))
         
         number_of_cells = master_data.frame_nb[master_data.frame_nb == t].count()
         
